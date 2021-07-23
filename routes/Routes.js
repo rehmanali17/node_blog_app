@@ -25,7 +25,7 @@ userRoutes.post('/signup',[
                 res.status(500).json({"message":"Mysql Query Error"})
             }else{
                 if(result.length > 0){
-                    res.status(500).json({"message":"User already exists"})
+                    res.status(401).json({"message":"User already exists"})
                 }else{
                     var sql = "INSERT into users(u_email,u_password,u_name,u_age) VALUES(?,?,?,?)"
                     sql = mysql.format(sql,[email,password,name,age])
@@ -33,7 +33,7 @@ userRoutes.post('/signup',[
                         if(err){
                             res.status(500).json({"message":"Mysql Query Error"})
                         }else if(result.affectedRows > 0){
-                            res.status(500).json({"message":"User Successfully added"})
+                            res.status(200).json({"message":"Registered Successfully"})
                         }
                     })
                 }
@@ -57,14 +57,43 @@ userRoutes.post('/login',[
                 res.status(500).json({"message":"Mysql Query Error"})
             }else{
                 if(result.length == 0){
-                    res.status(500).json({"message":"User does not exists"})
+                    res.status(500).json({"result":"User does not exists"})
                 }else{
-                    res.status(500).json({user:result})
+                    res.status(500).json({"result":result[0]})
                 }
             }
         })
     }
 });
+
+
+userRoutes.get('/getSingleUser/:id',(req,res)=>{
+    let id = req.params.id
+    var sql = "SELECT * from users where u_id=?"
+    conn.query(sql,[id],(err,result)=>{
+        if (err) {
+            res.status(500).json({ message: "Mysql Query Error" });
+          }else if (result.length == 0) {
+            res.status(200).json({ result: "No User" });
+          }else if (result.length > 0) {
+            res.status(200).json({ result: result[0] });
+          }
+    })
+})
+
+userRoutes.put('/update/:id',(req,res)=>{
+    let id = req.params.id
+    const { name,age,password } = req.body;
+    var sql = "UPDATE users set u_name=?,u_age=?,u_password=? where u_id=?"
+    conn.query(sql,[name,age,password,id],(err,result)=>{
+        if (err) {
+            res.status(500).json({ message: "Unable to edit profile" });
+          }else if (result.affectedRows > 0) {
+            res.status(200).json({ message: "Profile Updated Successfully" });
+          }
+    })
+})
+
 
 postRoutes.post("/add",[
     check('content','Content cannot be empty').notEmpty(),
@@ -91,7 +120,7 @@ postRoutes.post("/add",[
 
 
 postRoutes.get('/getAllPosts',(req,res)=>{
-    var sql = "SELECT * from posts order by post_added_date desc"
+    var sql = "SELECT posts.post_id,posts.post_image,posts.post_content,users.u_name from posts inner join users on posts.u_id=users.u_id order by posts.post_added_date desc"
     conn.query(sql,(err,result)=>{
         if (err) {
             res.status(500).json({ message: "Mysql Query Error" });
@@ -117,6 +146,34 @@ postRoutes.get('/getUserPosts/:id',(req,res)=>{
     })
 })
 
+postRoutes.get('/getSinglePost/:postId',(req,res)=>{
+    let postId = req.params.postId
+    var sql = "SELECT posts.post_id,posts.post_image,posts.post_content,users.u_name from posts inner join users on posts.u_id=users.u_id where posts.post_id=?"
+    conn.query(sql,[postId],(err,result)=>{
+        if (err) {
+            res.status(500).json({ message: "Mysql Query Error" });
+          }else if (result.length == 0) {
+            res.status(200).json({ posts: "No posts" });
+          }else if (result.length > 0) {
+            res.status(200).json({ posts: result[0] });
+          }
+    })
+})
+
+postRoutes.get('/getPostComments/:postId',(req,res)=>{
+    let postId = req.params.postId
+    var sql = "SELECT posts_comments.post_comment,users.u_name from posts_comments inner join users on posts_comments.u_id=users.u_id where post_id=?"
+    conn.query(sql,[postId],(err,result)=>{
+        if (err) {
+            res.status(500).json({ message: "Mysql Query Error" });
+          }else if (result.length == 0) {
+            res.status(200).json({ comments: "No Comments" });
+          }else if (result.length > 0) {
+            res.status(200).json({ comments: result });
+          }
+    })
+})
+
 postRoutes.delete('/delete/:postId',(req,res)=>{
     let post = req.params.postId
     var sql = "DELETE from posts where post_id=?"
@@ -124,7 +181,20 @@ postRoutes.delete('/delete/:postId',(req,res)=>{
         if (err) {
             res.status(500).json({ message: "Unable to delete post" });
           }else if (result.affectedRows > 0) {
-            res.status(200).json({ posts: "Post deleted successfully" });
+            res.status(200).json({ message: "Post deleted successfully" });
+          }
+    })
+})
+
+postRoutes.put('/update/:postId',(req,res)=>{
+    let post = req.params.postId
+    const { image,content } = req.body;
+    var sql = "UPDATE posts set post_image=?,post_content=? where post_id=?"
+    conn.query(sql,[image,content,post],(err,result)=>{
+        if (err) {
+            res.status(500).json({ message: "Unable to edit post" });
+          }else if (result.affectedRows > 0) {
+            res.status(200).json({ message: "Post Updated Successfully" });
           }
     })
 })
