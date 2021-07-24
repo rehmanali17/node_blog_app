@@ -57,9 +57,9 @@ userRoutes.post('/login',[
                 res.status(500).json({"message":"Mysql Query Error"})
             }else{
                 if(result.length == 0){
-                    res.status(500).json({"result":"User does not exists"})
+                    res.status(500).json({"result":"Wrong Credentials"})
                 }else{
-                    res.status(500).json({"result":result[0]})
+                    res.status(200).json({"result":result[0]})
                 }
             }
         })
@@ -162,7 +162,7 @@ postRoutes.get('/getSinglePost/:postId',(req,res)=>{
 
 postRoutes.get('/getPostComments/:postId',(req,res)=>{
     let postId = req.params.postId
-    var sql = "SELECT posts_comments.post_comment,users.u_name from posts_comments inner join users on posts_comments.u_id=users.u_id where post_id=?"
+    var sql = "SELECT posts_comments.post_comment,users.u_name from posts_comments inner join users on posts_comments.u_id=users.u_id where post_id=? order by posts_comments.comment_added_date desc"
     conn.query(sql,[postId],(err,result)=>{
         if (err) {
             res.status(500).json({ message: "Mysql Query Error" });
@@ -172,6 +172,20 @@ postRoutes.get('/getPostComments/:postId',(req,res)=>{
             res.status(200).json({ comments: result });
           }
     })
+})
+
+postRoutes.post('/postComment',(req,res)=>{
+    const { comment, post, user } = req.body;
+    var sql = "INSERT into posts_comments(post_comment,post_id,u_id) VALUES(?,?,?)"
+    sql = mysql.format(sql, [comment, post, user]);
+        conn.query(sql, (err, result) => {
+          if (err) {
+            res.status(500).json({ message: "Mysql Query Error" });
+          } else if (result.affectedRows > 0) {
+            res.status(200).json({ message: "Comment Posted Successfully" });
+          }
+        }
+    )
 })
 
 postRoutes.delete('/delete/:postId',(req,res)=>{
@@ -199,96 +213,96 @@ postRoutes.put('/update/:postId',(req,res)=>{
     })
 })
 
-postsAction.post("/:user/:post/:type",(req,res)=>{
-    var {user,post,type}=req.params;
-    if(type=='like'){
-        var sql = "SELECT * from posts_action where post_id=? and u_id=?"
-        conn.query(sql,[post,user],(err,result)=>{
-            if(err){
-                res.status(500).json({"message":"Mysql Query Error"})
-            }else if(result.length > 0){
-                let like = 1
-                let dislike = 0
-                var sql = "UPDATE posts_action set post_likes=?,post_dislikes=? where post_id=? and u_id=?"
-                conn.query(sql,[like,dislike,post,user],(err,result)=>{
-                    if(err){
-                        res.status(500).json({"message":"Mysql Query Error"})
-                    }else if(result.affectedRows > 0){
-                        res.status(200).json({"message":"Success"})
-                    }
-                })
-            }else if(result.length == 0){
-                let like = 1
-                let dislike = 0
-                var sql = "INSERT into posts_action(post_likes,post_dislikes,post_id,u_id) VALUES(?,?,?,?)"
-                sql = mysql.format(sql,[like,dislike,post,user])
-                conn.query(sql,(err,result)=>{
-                    if(err){
-                        res.status(500).json({"message":"Mysql Query Error"})
-                    }else if(result.affectedRows > 0){
-                        res.status(200).json({"message":"Success"})
-                    }
-                }) 
-            }
-        })
-    }else if(type=='dislike'){
-        var sql = "SELECT * from posts_action where post_id=? and u_id=?"
-        conn.query(sql,[post,user],(err,result)=>{
-            if(err){
-                res.status(500).json({"message":"Mysql Query Error"})
-            }else if(result.length > 0){
-                let like = 0
-                let dislike = 1
-                var sql = "UPDATE posts_action set post_likes=?,post_dislikes=? where post_id=? and u_id=?"
-                conn.query(sql,[like,dislike,post,user],(err,result)=>{
-                    if(err){
-                        res.status(500).json({"message":"Mysql Query Error"})
-                    }else if(result.affectedRows > 0){
-                        res.status(200).json({"message":"Success"})
-                    }
-                })
-            }else if(result.length == 0){
-                let like = 0
-                let dislike = 1
-                var sql = "INSERT into posts_action(post_likes,post_dislikes,post_id,u_id) VALUES(?,?,?,?)"
-                sql = mysql.format(sql,[like,dislike,post,user])
-                conn.query(sql,(err,result)=>{
-                    if(err){
-                        res.status(500).json({"message":"Mysql Query Error"})
-                    }else if(result.affectedRows > 0){
-                        res.status(200).json({"message":"Success"})
-                    }
-                }) 
-            }
-        })
-    }
-})
+// postsAction.post("/:user/:post/:type",(req,res)=>{
+//     var {user,post,type}=req.params;
+//     if(type=='like'){
+//         var sql = "SELECT * from posts_action where post_id=? and u_id=?"
+//         conn.query(sql,[post,user],(err,result)=>{
+//             if(err){
+//                 res.status(500).json({"message":"Mysql Query Error"})
+//             }else if(result.length > 0){
+//                 let like = 1
+//                 let dislike = 0
+//                 var sql = "UPDATE posts_action set post_likes=?,post_dislikes=? where post_id=? and u_id=?"
+//                 conn.query(sql,[like,dislike,post,user],(err,result)=>{
+//                     if(err){
+//                         res.status(500).json({"message":"Mysql Query Error"})
+//                     }else if(result.affectedRows > 0){
+//                         res.status(200).json({"message":"Success"})
+//                     }
+//                 })
+//             }else if(result.length == 0){
+//                 let like = 1
+//                 let dislike = 0
+//                 var sql = "INSERT into posts_action(post_likes,post_dislikes,post_id,u_id) VALUES(?,?,?,?)"
+//                 sql = mysql.format(sql,[like,dislike,post,user])
+//                 conn.query(sql,(err,result)=>{
+//                     if(err){
+//                         res.status(500).json({"message":"Mysql Query Error"})
+//                     }else if(result.affectedRows > 0){
+//                         res.status(200).json({"message":"Success"})
+//                     }
+//                 }) 
+//             }
+//         })
+//     }else if(type=='dislike'){
+//         var sql = "SELECT * from posts_action where post_id=? and u_id=?"
+//         conn.query(sql,[post,user],(err,result)=>{
+//             if(err){
+//                 res.status(500).json({"message":"Mysql Query Error"})
+//             }else if(result.length > 0){
+//                 let like = 0
+//                 let dislike = 1
+//                 var sql = "UPDATE posts_action set post_likes=?,post_dislikes=? where post_id=? and u_id=?"
+//                 conn.query(sql,[like,dislike,post,user],(err,result)=>{
+//                     if(err){
+//                         res.status(500).json({"message":"Mysql Query Error"})
+//                     }else if(result.affectedRows > 0){
+//                         res.status(200).json({"message":"Success"})
+//                     }
+//                 })
+//             }else if(result.length == 0){
+//                 let like = 0
+//                 let dislike = 1
+//                 var sql = "INSERT into posts_action(post_likes,post_dislikes,post_id,u_id) VALUES(?,?,?,?)"
+//                 sql = mysql.format(sql,[like,dislike,post,user])
+//                 conn.query(sql,(err,result)=>{
+//                     if(err){
+//                         res.status(500).json({"message":"Mysql Query Error"})
+//                     }else if(result.affectedRows > 0){
+//                         res.status(200).json({"message":"Success"})
+//                     }
+//                 }) 
+//             }
+//         })
+//     }
+// })
 
 
-postsAction.get("/count/:post/:type",(req,res)=>{
-    var {post,type}=req.params;
-    if(type=='like'){
-        let like = 1
-        var sql = "SELECT count(*) as count from posts_action where post_id=? and post_likes=?"
-        conn.query(sql,[post,like],(err,result)=>{
-            if(err){
-                res.status(500).json({"message":"Mysql Query Error"})
-            }else{
-                res.json({"likeCount":result[0].count})
-            }
-        })
-    }else if(type=='dislike'){
-        let dislike = 1
-        var sql = "SELECT count(*) as count from posts_action where post_id=? and post_dislikes=?"
-        conn.query(sql,[post,dislike],(err,result)=>{
-            if(err){
-                res.status(500).json({"message":"Mysql Query Error"})
-            }else{
-                res.json({"dislikeCount":result[0].count})
-            }
-        })
-    }
-})
+// postsAction.get("/count/:post/:type",(req,res)=>{
+//     var {post,type}=req.params;
+//     if(type=='like'){
+//         let like = 1
+//         var sql = "SELECT count(*) as count from posts_action where post_id=? and post_likes=?"
+//         conn.query(sql,[post,like],(err,result)=>{
+//             if(err){
+//                 res.status(500).json({"message":"Mysql Query Error"})
+//             }else{
+//                 res.json({"likeCount":result[0].count})
+//             }
+//         })
+//     }else if(type=='dislike'){
+//         let dislike = 1
+//         var sql = "SELECT count(*) as count from posts_action where post_id=? and post_dislikes=?"
+//         conn.query(sql,[post,dislike],(err,result)=>{
+//             if(err){
+//                 res.status(500).json({"message":"Mysql Query Error"})
+//             }else{
+//                 res.json({"dislikeCount":result[0].count})
+//             }
+//         })
+//     }
+// })
 
 
 
