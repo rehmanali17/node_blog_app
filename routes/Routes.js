@@ -51,15 +51,20 @@ userRoutes.post('/login',[
         return res.status(400).json({errors:errors.array()})
     }else{
         const {email,password} = req.body
-        var sql = "SELECT * from users where u_email=? and u_password=?"
+        var sql = "SELECT * from users where u_email=?"
         conn.query(sql,[email,password],(err,result)=>{
             if(err){
                 res.status(500).json({"message":"Mysql Query Error"})
             }else{
                 if(result.length == 0){
-                    res.status(500).json({"result":"Wrong Credentials"})
+                    res.status(500).json({"result":"User does not exist"})
                 }else{
-                    res.status(200).json({"result":result[0]})
+                    if(result[0].u_password != password){
+                      res.status(500).json({"result":"Wrong Password"})
+                    }else{
+                      res.status(200).json({"result":result[0]})
+                    }
+                    
                 }
             }
         })
