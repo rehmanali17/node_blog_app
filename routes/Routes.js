@@ -6,6 +6,8 @@ const userRoutes = express.Router()
 const postRoutes = express.Router()
 const postsAction = express.Router()
 
+
+// User Signup
 userRoutes.post('/signup',[
     check('email','Enter a valid email').isEmail(),
     check('password','Enter a 6 digit password').isLength({
@@ -42,6 +44,7 @@ userRoutes.post('/signup',[
     }
 });
 
+// User Login
 userRoutes.post('/login',[
     check('email','Enter a valid email').isEmail(),
     check('password','Enter password').notEmpty()
@@ -71,7 +74,7 @@ userRoutes.post('/login',[
     }
 });
 
-
+//Get Single User by ID
 userRoutes.get('/getSingleUser/:id',(req,res)=>{
     let id = req.params.id
     var sql = "SELECT * from users where u_id=?"
@@ -86,6 +89,7 @@ userRoutes.get('/getSingleUser/:id',(req,res)=>{
     })
 })
 
+// Update User Profile
 userRoutes.put('/update/:id',(req,res)=>{
     let id = req.params.id
     const { name,age,password } = req.body;
@@ -99,7 +103,7 @@ userRoutes.put('/update/:id',(req,res)=>{
     })
 })
 
-
+// Add Post
 postRoutes.post("/add",[
     check('content','Content cannot be empty').notEmpty(),
     check('image','Add an Image').notEmpty(),
@@ -123,7 +127,7 @@ postRoutes.post("/add",[
     }
 })
 
-
+//Get All Posts
 postRoutes.get('/getAllPosts',(req,res)=>{
     var sql = "SELECT posts.post_id,posts.post_image,posts.post_content,users.u_name from posts inner join users on posts.u_id=users.u_id order by posts.post_added_date desc"
     conn.query(sql,(err,result)=>{
@@ -137,6 +141,7 @@ postRoutes.get('/getAllPosts',(req,res)=>{
     })
 })
 
+//Get Single User Posts
 postRoutes.get('/getUserPosts/:id',(req,res)=>{
     let user = req.params.id
     var sql = "SELECT * from posts where u_id=? order by post_added_date desc"
@@ -151,6 +156,7 @@ postRoutes.get('/getUserPosts/:id',(req,res)=>{
     })
 })
 
+//Get Single Post by ID
 postRoutes.get('/getSinglePost/:postId',(req,res)=>{
     let postId = req.params.postId
     var sql = "SELECT posts.post_id,posts.post_image,posts.post_content,users.u_name from posts inner join users on posts.u_id=users.u_id where posts.post_id=?"
@@ -165,6 +171,8 @@ postRoutes.get('/getSinglePost/:postId',(req,res)=>{
     })
 })
 
+
+//Get Post Comments
 postRoutes.get('/getPostComments/:postId',(req,res)=>{
     let postId = req.params.postId
     var sql = "SELECT posts_comments.post_comment,users.u_name from posts_comments inner join users on posts_comments.u_id=users.u_id where post_id=? order by posts_comments.comment_added_date desc"
@@ -179,6 +187,7 @@ postRoutes.get('/getPostComments/:postId',(req,res)=>{
     })
 })
 
+// Add Comment
 postRoutes.post('/postComment',(req,res)=>{
     const { comment, post, user } = req.body;
     var sql = "INSERT into posts_comments(post_comment,post_id,u_id) VALUES(?,?,?)"
@@ -193,6 +202,7 @@ postRoutes.post('/postComment',(req,res)=>{
     )
 })
 
+// Delete Post
 postRoutes.delete('/delete/:postId',(req,res)=>{
     let post = req.params.postId
     var sql = "DELETE from posts where post_id=?"
@@ -205,6 +215,7 @@ postRoutes.delete('/delete/:postId',(req,res)=>{
     })
 })
 
+// Update Post
 postRoutes.put('/update/:postId',(req,res)=>{
     let post = req.params.postId
     const { image,content } = req.body;
@@ -217,97 +228,6 @@ postRoutes.put('/update/:postId',(req,res)=>{
           }
     })
 })
-
-// postsAction.post("/:user/:post/:type",(req,res)=>{
-//     var {user,post,type}=req.params;
-//     if(type=='like'){
-//         var sql = "SELECT * from posts_action where post_id=? and u_id=?"
-//         conn.query(sql,[post,user],(err,result)=>{
-//             if(err){
-//                 res.status(500).json({"message":"Mysql Query Error"})
-//             }else if(result.length > 0){
-//                 let like = 1
-//                 let dislike = 0
-//                 var sql = "UPDATE posts_action set post_likes=?,post_dislikes=? where post_id=? and u_id=?"
-//                 conn.query(sql,[like,dislike,post,user],(err,result)=>{
-//                     if(err){
-//                         res.status(500).json({"message":"Mysql Query Error"})
-//                     }else if(result.affectedRows > 0){
-//                         res.status(200).json({"message":"Success"})
-//                     }
-//                 })
-//             }else if(result.length == 0){
-//                 let like = 1
-//                 let dislike = 0
-//                 var sql = "INSERT into posts_action(post_likes,post_dislikes,post_id,u_id) VALUES(?,?,?,?)"
-//                 sql = mysql.format(sql,[like,dislike,post,user])
-//                 conn.query(sql,(err,result)=>{
-//                     if(err){
-//                         res.status(500).json({"message":"Mysql Query Error"})
-//                     }else if(result.affectedRows > 0){
-//                         res.status(200).json({"message":"Success"})
-//                     }
-//                 }) 
-//             }
-//         })
-//     }else if(type=='dislike'){
-//         var sql = "SELECT * from posts_action where post_id=? and u_id=?"
-//         conn.query(sql,[post,user],(err,result)=>{
-//             if(err){
-//                 res.status(500).json({"message":"Mysql Query Error"})
-//             }else if(result.length > 0){
-//                 let like = 0
-//                 let dislike = 1
-//                 var sql = "UPDATE posts_action set post_likes=?,post_dislikes=? where post_id=? and u_id=?"
-//                 conn.query(sql,[like,dislike,post,user],(err,result)=>{
-//                     if(err){
-//                         res.status(500).json({"message":"Mysql Query Error"})
-//                     }else if(result.affectedRows > 0){
-//                         res.status(200).json({"message":"Success"})
-//                     }
-//                 })
-//             }else if(result.length == 0){
-//                 let like = 0
-//                 let dislike = 1
-//                 var sql = "INSERT into posts_action(post_likes,post_dislikes,post_id,u_id) VALUES(?,?,?,?)"
-//                 sql = mysql.format(sql,[like,dislike,post,user])
-//                 conn.query(sql,(err,result)=>{
-//                     if(err){
-//                         res.status(500).json({"message":"Mysql Query Error"})
-//                     }else if(result.affectedRows > 0){
-//                         res.status(200).json({"message":"Success"})
-//                     }
-//                 }) 
-//             }
-//         })
-//     }
-// })
-
-
-// postsAction.get("/count/:post/:type",(req,res)=>{
-//     var {post,type}=req.params;
-//     if(type=='like'){
-//         let like = 1
-//         var sql = "SELECT count(*) as count from posts_action where post_id=? and post_likes=?"
-//         conn.query(sql,[post,like],(err,result)=>{
-//             if(err){
-//                 res.status(500).json({"message":"Mysql Query Error"})
-//             }else{
-//                 res.json({"likeCount":result[0].count})
-//             }
-//         })
-//     }else if(type=='dislike'){
-//         let dislike = 1
-//         var sql = "SELECT count(*) as count from posts_action where post_id=? and post_dislikes=?"
-//         conn.query(sql,[post,dislike],(err,result)=>{
-//             if(err){
-//                 res.status(500).json({"message":"Mysql Query Error"})
-//             }else{
-//                 res.json({"dislikeCount":result[0].count})
-//             }
-//         })
-//     }
-// })
 
 
 
